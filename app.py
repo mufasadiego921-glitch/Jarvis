@@ -5,6 +5,9 @@ import google.generativeai as genai
 API_KEY = "AIzaSyAY6JCFR4eJ5Bqgkt4tkPYFifL4LU5n57U"
 
 genai.configure(api_key=API_KEY)
+
+# A motor beállítása a legújabb verzióra
+MODEL_NAME = 'gemini-3-flash' 
 model = genai.GenerativeModel('gemini-3-flash')
 
 st.set_page_config(page_title="FRIDAY OS", page_icon="💃")
