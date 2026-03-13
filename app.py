@@ -24,6 +24,44 @@ def load_model():
     except:
         return genai.GenerativeModel('gemini-pro')
 
+# 2. HANGMINTA LEJÁTSZÓ FÜGGVÉNY
+def play_voice_sample(file_name):
+    if os.path.exists(file_name):
+        audio_file = open(file_name, 'rb')
+        audio_bytes = audio_file.read()
+        st.audio(audio_bytes, format="audio/mp3", autoplay=True)
+    else:
+        st.error(f"Hiba: A '{file_name}' fájl nem található a szerveren!")
+
+# 3. DESIGN
+st.set_page_config(page_title="FRIDAY OS", page_icon="💃")
+st.title("💃 FRIDAY Interface")
+
+# 4. INTERAKCIÓ
+user_input = st.chat_input("Parancsoljon, Uram...")
+
+if user_input:
+    # SPECIÁLIS PARANCS: Ha köszön, játssza le a feltöltött hangot
+    if any(x in user_input.lower() for x in ["szia", "helló", "üdv"]):
+        play_voice_sample("szexi_valasz.mp3")
+        st.subheader("FRIDAY: Üdvözlöm, Uram. Már vártam Önre.")
+
+    # KÉPGENERÁLÁS
+    elif "kép" in user_input.lower() or "generálj" in user_input.lower():
+        st.write("Azonnal generálom a vizuális adatokat...")
+        img_url = f"https://pollinations.ai{user_input.replace(' ', '_')}?width=1024&height=1024&nologo=true"
+        st.image(img_url)
+
+    # ÁLTALÁNOS AI VÁLASZ (Ha nincs fix hangminta, akkor a gép beszél)
+    else:
+        response = model.generate_content(f"Te FRIDAY vagy, egy szexi női asszisztens. Válaszolj röviden: {user_input}")
+        valasz = response.text
+        st.subheader(f"FRIDAY: {valasz}")
+        
+        # Tartalék női hang (Javascript)
+        html_code = f"""<script>var m=new SpeechSynthesisUtterance("{valasz.replace('"', '')}");m.lang='hu-HU';m.pitch=1.4;window.speechSynthesis.speak(m);</script>"""
+        st.components.v1.html(html_code, height=0)
+
 model = load_model()
 
 # --- 3. VIZUÁLIS DESIGN ---
