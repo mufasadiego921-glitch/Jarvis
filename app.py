@@ -2,7 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 import time
 
-# --- 1. BULLETPROOF ENGINE (SELF-REPAIRING + RETRYING) ---
+# --- 1. MOTOR (ÖNJAVÍTÓ + ÚJRAPRÓBÁLKOZÓ) ---
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=API_KEY)
@@ -10,7 +10,6 @@ try:
     @st.cache_resource
     def load_best_model():
         all_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
-        # 1.5-flash is the most stable and allows the most free requests
         for target in ["models/gemini-1.5-flash", "models/gemini-pro"]:
             if target in all_models:
                 return genai.GenerativeModel(target)
@@ -18,10 +17,10 @@ try:
 
     model = load_best_model()
 except Exception as e:
-    st.error(f"System error: {e}")
+    st.error(f"Rendszerhiba: {e}")
     st.stop()
 
-# --- 2. SEXY FEMALE VOICE (JS) ---
+# --- 2. SZEXI NŐI HANG (JS) ---
 def speak(text):
     clean_text = text.replace('"', '').replace("'", "").replace("\n", " ")
     html_code = f"""
@@ -39,22 +38,27 @@ def speak(text):
 # --- 3. DESIGN ---
 st.set_page_config(page_title="FRIDAY OS", page_icon="💃")
 st.markdown("<style>.stApp {background-color: #050505; color: #00d4ff;}</style>", unsafe_allow_html=True)
-st.title("💃 FRIDAY Interface v1.8")
+st.title("💃 FRIDAY Interface v1.9")
 
-# --- 4. INTERACTION WITH SMART WAITING ---
-user_input = st.chat_input("Command, Sir...")
+# --- 4. INTERAKCIÓ ---
+user_input = st.chat_input("Parancsoljon, Uram...")
 
 if user_input:
-    if any(x in user_input.lower() for x in ["image", "generate", "photo"]):
-        st.write("Generating visual data, Sir...")
-        img_url = f"https://pollinations.ai{user_input.replace(' ', '_')}?width=1024&height=1024&nologo=true"
-        st.image(img_url)
-        speak("Here is the requested visualization, Sir.")
+    # KÉPGENERÁLÁS DETEKTÁLÁSA
+    if any(x in user_input.lower() for x in ["kép", "generálj", "fotó", "rajzolj"]):
+        with st.spinner("Vizuális adatok feldolgozása, Uram..."):
+            # A prompt kinyerése és URL baráttá tétele
+            img_prompt = user_input.replace(" ", "%20")
+            img_url = f"https://pollinations.ai{img_prompt}?width=1024&height=1024&nologo=true"
+            
+            st.image(img_url, caption=f"Generált vizualizáció: {user_input}")
+            speak("Íme a kért kép, Uram. Remélem, elnyeri tetszését.")
+    
+    # AI VÁLASZ (Várakozási logikával)
     else:
-        # RETRY LOGIC (Max 3 attempts)
         success = False
         attempts = 0
-        prompt = f"You are FRIDAY, a sexy female assistant. Answer in Hungarian, flirting, and address the user as 'Sir': {user_input}"
+        prompt = f"Te FRIDAY vagy, egy szexi női asszisztens. Válaszolj magyarul, flörtölve, és szólítsd 'Uram'-nak a felhasználót: {user_input}"
         
         while not success and attempts < 3:
             try:
@@ -66,12 +70,8 @@ if user_input:
             except Exception as e:
                 if "429" in str(e):
                     attempts += 1
-                    with st.spinner(f"Google is overloaded, waiting... ({attempts}/3)"):
-                        time.sleep(5) # Wait 5 seconds and retry
+                    with st.spinner("Google túlterhelt, várakozás..."):
+                        time.sleep(5)
                 else:
-                    st.error(f"Error: {e}")
+                    st.error(f"Hiba: {e}")
                     break
-        
-        if not success and attempts >= 3:
-            st.warning("Sir, Google has currently closed the tap completely. Please take a 1-minute break!")
-
