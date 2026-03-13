@@ -9,8 +9,8 @@ from PIL import Image
 # --- 1. MOTOR ÉS BIZTONSÁG ---
 try:
     # Google API a gondolkodáshoz, ElevenLabs a szexi hanghoz
-    GEMINI_KEY = st.secrets["GEMINI_API_KEY"]
-    ELEVEN_KEY = st.secrets["ELEVEN_API_KEY"]
+    GEMINI_KEY = ["GEMINI_API_KEY"]
+    ELEVEN_KEY = ["ELEVEN_API_KEY"]
     genai.configure(api_key=GEMINI_KEY)
     model = genai.GenerativeModel('gemini-1.5-flash')
 except:
