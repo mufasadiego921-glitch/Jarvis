@@ -11,8 +11,10 @@ try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=API_KEY)
     # Automatikus motorválasztó
-    model_name = "models/gemini-1.5-flash"
-    model = genai.GenerativeModel(model_name)
+    # --- FIXED MODEL NAME ---
+model_name = "gemini-2.0-flash" # Or "gemini-2.5-flash", if available
+model = genai.GenerativeModel(model_name)
+
 except Exception as e:
     st.error(f"Rendszerhiba: {e}")
     st.stop()
