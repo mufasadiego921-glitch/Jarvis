@@ -1,77 +1,68 @@
 import streamlit as st
 import google.generativeai as genai
 import time
+import random
+import urllib.parse
 
-# --- 1. MOTOR (ÖNJAVÍTÓ + ÚJRAPRÓBÁLKOZÓ) ---
+# --- 1. MOTOR (ÖNJAVÍTÓ) ---
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=API_KEY)
-
     @st.cache_resource
-    def load_best_model():
-        all_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+    def load_model():
+        available = [m.name for m in genai.list_models()]
         for target in ["models/gemini-1.5-flash", "models/gemini-pro"]:
-            if target in all_models:
-                return genai.GenerativeModel(target)
-        return genai.GenerativeModel(all_models[0])
-
-    model = load_best_model()
-except Exception as e:
-    st.error(f"Rendszerhiba: {e}")
+            if target in available: return genai.GenerativeModel(target)
+        return genai.GenerativeModel("models/gemini-1.5-flash")
+    model = load_model()
+except:
+    st.error("Rendszerhiba: API kulcs hiányzik!")
     st.stop()
 
 # --- 2. SZEXI NŐI HANG (JS) ---
 def speak(text):
     clean_text = text.replace('"', '').replace("'", "").replace("\n", " ")
-    html_code = f"""
+    st.components.v1.html(f"""
         <script>
             window.speechSynthesis.cancel();
             var msg = new SpeechSynthesisUtterance("{clean_text}");
-            msg.lang = 'hu-HU';
-            msg.pitch = 1.5;
-            msg.rate = 0.85;
+            msg.lang = 'hu-HU'; msg.pitch = 1.5; msg.rate = 0.85;
             window.speechSynthesis.speak(msg);
         </script>
-    """
-    st.components.v1.html(html_code, height=0)
+    """, height=0)
 
 # --- 3. DESIGN ---
 st.set_page_config(page_title="FRIDAY OS", page_icon="💃")
 st.markdown("<style>.stApp {background-color: #050505; color: #00d4ff;}</style>", unsafe_allow_html=True)
-st.title("💃 FRIDAY Interface v1.9")
+st.title("💃 FRIDAY Interface v2.0")
 
 # --- 4. INTERAKCIÓ ---
 user_input = st.chat_input("Parancsoljon, Uram...")
 
 if user_input:
-    # KÉPGENERÁLÁS DETEKTÁLÁSA
+    # JAVÍTOTT KÉPGENERÁLÁS
     if any(x in user_input.lower() for x in ["kép", "generálj", "fotó", "rajzolj"]):
-        with st.spinner("Vizuális adatok feldolgozása, Uram..."):
-            # A prompt kinyerése és URL baráttá tétele
-            img_prompt = user_input.replace(" ", "%20")
-            img_url = f"https://pollinations.ai{img_prompt}?width=1024&height=1024&nologo=true"
+        with st.spinner("Vizuális adatok kódolása..."):
+            # Tisztítjuk a szöveget az URL-hez
+            clean_prompt = urllib.parse.quote(user_input)
+            # Véletlenszerű szám, hogy mindig frissüljön (Cache törlés)
+            seed = random.randint(0, 99999)
+            img_url = f"https://pollinations.ai/p/{clean_prompt}?width=1024&height=1024&seed={seed}&nologo=true"
             
-            st.image(img_url, caption=f"Generált vizualizáció: {user_input}")
-            speak("Íme a kért kép, Uram. Remélem, elnyeri tetszését.")
+            # Megjelenítés
+            st.image(img_url, use_container_width=True)
+            st.markdown(f"[Kép megnyitása teljes méretben]({img_url})")
+            speak("Íme a kért kép, Uram. Sikerült a generálás.")
     
-    # AI VÁLASZ (Várakozási logikával)
+    # AI VÁLASZ
     else:
-        success = False
-        attempts = 0
-        prompt = f"Te FRIDAY vagy, egy szexi női asszisztens. Válaszolj magyarul, flörtölve, és szólítsd 'Uram'-nak a felhasználót: {user_input}"
-        
-        while not success and attempts < 3:
-            try:
-                response = model.generate_content(prompt)
-                valasz = response.text
-                st.subheader(f"FRIDAY: {valasz}")
-                speak(valasz)
-                success = True
-            except Exception as e:
-                if "429" in str(e):
-                    attempts += 1
-                    with st.spinner("Google túlterhelt, várakozás..."):
-                        time.sleep(5)
-                else:
-                    st.error(f"Hiba: {e}")
-                    break
+        try:
+            prompt = f"Te FRIDAY vagy, egy szexi női asszisztens. Válaszolj magyarul, flörtölve: {user_input}"
+            response = model.generate_content(prompt)
+            valasz = response.text
+            st.subheader(f"FRIDAY: {valasz}")
+            speak(valasz)
+        except Exception as e:
+            if "429" in str(e): st.error("Google korlátozás. Várjunk 30 mp-et!")
+            else: st.error(f"Hiba: {e}")
+
