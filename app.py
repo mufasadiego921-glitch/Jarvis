@@ -2,7 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 
 # IDE MÁSOLD BE AZ API KULCSODAT A "" KÖZÉ!
-API_KEY = "IDE_JÖN_AZ_API_KULCSOD"
+API_KEY = "AIzaSyAY6JCFR4eJ5Bqgkt4tkPYFifL4LU5n57U"
 
 genai.configure(api_key=API_KEY)
 model = genai.GenerativeModel('gemini-1.5-flash')
