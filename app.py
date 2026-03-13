@@ -1,25 +1,35 @@
 import streamlit as st
 import google.generativeai as genai
 
-# --- 1. BIZTONSÁGI KONFIGURÁCIÓ ---
+# --- 1. SECURITY CONFIGURATION ---
 try:
     API_KEY = st.secrets["GEMINI_API_KEY"]
     genai.configure(api_key=API_KEY)
-    model = genai.GenerativeModel('gemini-1.5-flash')
+
+    # SELF-REPAIRING MODEL FINDER (To avoid 404 errors)
+    @st.cache_resource
+    def get_best_model():
+        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_generation_methods]
+        # Order: 1.5 flash, 2.0 flash, pro, or whatever is available
+        for target in ["models/gemini-1.5-flash", "models/gemini-2.0-flash", "models/gemini-pro"]:
+            if target in available_models:
+                return genai.GenerativeModel(target)
+        return genai.GenerativeModel(available_models[0])
+
+    model = get_best_model()
 except Exception as e:
-    st.error("Rendszerhiba: Az API kulcs hiányzik a Secrets-ből!")
+    st.error(f"System error at startup: {e}")
     st.stop()
 
-# --- 2. VIZUÁLIS DESIGN (CSS) ---
+# --- 2. VISUAL DESIGN (CSS) ---
 st.set_page_config(page_title="FRIDAY OS", page_icon="💃", layout="centered")
 
 st.markdown("""
     <style>
     .stApp { background-color: #050505; color: #00d4ff; }
     .stChatInput { border-radius: 20px; border: 1px solid #00d4ff; }
-    /* Pulzáló AI Mag */
     .ai-core {
-        width: 100px; height: 100px;
+        width: 80px; height: 80px;
         background: radial-gradient(circle, #00d4ff 0%, #000 70%);
         border-radius: 50%;
         margin: 0 auto;
@@ -35,45 +45,45 @@ st.markdown("""
     <div class="ai-core"></div>
     """, unsafe_allow_html=True)
 
-st.title("💃 FRIDAY Interface v1.0")
+st.title("💃 FRIDAY Interface v1.1")
 
-# Oldalsáv stílusokhoz
-style = st.sidebar.selectbox("FRIDAY Hangulata:", 
-    ["Szexi & Kedves", "Szigorú Domináns", "Hűséges Asszisztens", "Pimasz & Játékos"])
+style = st.sidebar.selectbox("FRIDAY Mood:",
+    ["Sexy & Kind", "Strict Dominant", "Loyal Assistant", "Naughty & Playful"])
 
-# --- 3. LOGIKA ÉS INTERAKCIÓ ---
-user_input = st.chat_input("Parancsoljon, Uram...")
+# --- 3. LOGIC AND INTERACTION ---
+user_input = st.chat_input("Command, Sir...")
 
 if user_input:
-    # Képgenerálás detektálás
-    if any(x in user_input.lower() for x in ["kép", "generálj", "fotó"]):
-        with st.spinner("Vizuális adatok feldolgozása..."):
-            img_url = f"https://pollinations.ai{user_input.replace(' ', '_')}?width=1024&height=1024&nologo=true"
-            st.image(img_url, caption="Íme a kért vizualizáció, Uram.")
-    
-    # AI Válasz generálása
-    system_instruction = f"Te FRIDAY vagy, egy szexi, intelligens női asszisztens. Stílusod: {style}. Válaszolj magyarul, flörtölve, hűségesen, és szólítsd a felhasználót 'Uram'-nak. Rövid, velős válaszokat adj."
-    
-    try:
-        response = model.generate_content(f"{system_instruction} \n Kérés: {user_input}")
-        valasz = response.text
-        
-        with st.chat_message("assistant", avatar="💃"):
-            st.write(valasz)
+    # Image generation
+    if any(x in user_input.lower() for x in ["image", "generate", "photo"]):
+        st.write("Processing visual data...")
+        img_url = f"https://pollinations.ai{user_input.replace(' ', '_')}?width=1024&height=1024&nologo=true"
+        st.image(img_url, caption="Here's the requested visualization, Sir.")
 
-        # SZEXI NŐI HANG (JavaScript)
-        clean_valasz = valasz.replace("'", "").replace('"', '').replace("\n", " ")
+    # AI Answer
+    system_instruction = f"You are FRIDAY, a sexy, intelligent female assistant. Your style: {style}. Answer in Hungarian, flirtatiously, loyally, and address the user as 'Sir'."
+
+    try:
+        response = model.generate_content(f"{system_instruction} \n Request: {user_input}")
+        answer = response.text
+
+        with st.chat_message("assistant", avatar="💃"):
+            st.write(answer)
+
+        # SEXY FEMALE VOICE (JavaScript)
+        clean_answer = answer.replace("'", "").replace('"', '').replace("\n", " ")
         html_code = f"""
             <script>
                 window.speechSynthesis.cancel();
-                var msg = new SpeechSynthesisUtterance("{clean_valasz}");
+                var msg = new SpeechSynthesisUtterance("{clean_answer}");
                 msg.lang = 'hu-HU';
-                msg.pitch = 1.35; // Nőiesebb magasság
-                msg.rate = 0.88; // Érzékibb tempó
+                msg.pitch = 1.35;
+                msg.rate = 0.88;
                 window.speechSynthesis.speak(msg);
             </script>
         """
         st.components.v1.html(html_code, height=0)
-        
+
     except Exception as e:
-        st.error(f"Kommunikációs hiba: {e}")
+        st.error(f"Communication error: {e}")
+
