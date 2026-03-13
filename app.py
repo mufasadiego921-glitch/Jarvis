@@ -1,7 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
 
-# IDE MÁSOLD BE AZ API KULCSODAT A "" KÖZÉ!
+# IDE MÁSOLD BE AZ API KULCSODAT A "AIzaSyAY6JCFR4eJ5Bqgkt4tkPYFifL4LU5n57U" KÖZÉ!
 API_KEY = "AIzaSyAY6JCFR4eJ5Bqgkt4tkPYFifL4LU5n57U"
 
 genai.configure(api_key=API_KEY)
