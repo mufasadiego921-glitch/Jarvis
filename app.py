@@ -2,7 +2,8 @@ import streamlit as st
 import google.generativeai as genai
 
 # --- 1. KONFIGURÁCIÓ ---
-API_KEY = "AIzaSyAY6JCFR4eJ5Bqgkt4tkPYFifL4LU5n57U"
+API_KEY = st.secrets["GEMINI_API_KEY"]
+
 genai.configure(api_key=API_KEY)
 
 @st.cache_resource
