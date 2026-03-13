@@ -5,7 +5,7 @@ import google.generativeai as genai
 API_KEY = "AIzaSyAY6JCFR4eJ5Bqgkt4tkPYFifL4LU5n57U"
 
 genai.configure(api_key=API_KEY)
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-pro')
 
 st.set_page_config(page_title="FRIDAY OS", page_icon="💃")
 st.markdown("<style>body { background-color: #0e1117; color: white; }</style>", unsafe_allow_html=True)
